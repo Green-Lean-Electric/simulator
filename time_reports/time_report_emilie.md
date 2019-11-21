@@ -29,3 +29,4 @@
 |2019-11-18 	|0.5     	|Understanding of the promises|
 |2019-11-19 	|1      	|Correct the errors on th GetProsumerConsumption web service|
 |2019-11-19 	|0.5     	|Correct merge conflicts|
+|2019-11-21 	|0.5     	|Set up new github environnement|
