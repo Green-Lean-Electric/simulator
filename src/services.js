@@ -1,3 +1,5 @@
+const database = require('../../utils/src/mongo.js');
+
 const gaussianFunction = (expectedValue, standardValue, x) => (
     1.0 / (standardValue * Math.sqrt(2 * Math.PI))
     * Math.exp(
@@ -38,28 +40,29 @@ exports.getWindSpeed = function (date) {
         date: date
     };
 
-    require('./mongo.js').insertOne(undefined, DATABASE_NAME, 'windSpeed', windSpeedAsJson);
+    database.insertOne(undefined, DATABASE_NAME, 'windSpeed', windSpeedAsJson);
 
     return windSpeedAsJson;
 };
 
-exports.getWholeElectricityConsumption = function (date) {
-
+exports.getElectricityConsumption = function (date, prosumerId) {
     const dailyConsumptionPerPerson = 27;
 
-    const morningConsumption = 21;
-    const afternoonConsumption = dailyConsumptionPerPerson - morningConsumption;
+    let morningConsumption = 21;
+    let afternoonConsumption = dailyConsumptionPerPerson - morningConsumption;
 
-    const databaseName = DATABASE_NAME;
-    const collectionName = 'prosumers';
-    return require('./mongo.js').count(undefined, databaseName, collectionName).then((count) => {
-        return getElectricityConsumption(date, morningConsumption, afternoonConsumption, count);
-    });
+    var changing_value = prosumerId.length ;
 
+    if (prosumerId.length % 2 === 0)
+        changing_value = -changing_value;
+
+    afternoonConsumption += afternoonConsumption * changing_value / 100;
+    morningConsumption += morningConsumption * changing_value / 100;
+
+    return computeElectricityConsumption(date, morningConsumption, afternoonConsumption);
 };
 
-function getElectricityConsumption(date, morningConsumption, afternoonConsumption, people){ //TODO : Check, je pense que cela get la consommation a la seconde près dans la date pas celle du jours, quest ce qu'on veut nous ?
-
+function computeElectricityConsumption(date, morningConsumption, afternoonConsumption){
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const seconds = date.getSeconds();
@@ -82,10 +85,10 @@ function getElectricityConsumption(date, morningConsumption, afternoonConsumptio
                     5400,
                     currentTimestamp
                 ) * afternoonConsumption
-            ) * people
+            )
     };
 
-    require('./mongo.js').insertOne(undefined, DATABASE_NAME, 'consumption', electricityConsumption);
+    database.insertOne(undefined, DATABASE_NAME, 'consumption', electricityConsumption);
 
     return electricityConsumption;
 }
@@ -113,85 +116,7 @@ exports.getCurrentElectricityPrice = async function (date) {
         date: date
     };
 
-    require('./mongo.js').insertOne(undefined, DATABASE_NAME, 'currentPrice', priceAsJson);
+    database.insertOne(undefined, DATABASE_NAME, 'currentPrice', priceAsJson);
 
     return priceAsJson;
-};
-
-// DataBase
-exports.insertProsumer = function (email, password) {
-    const databaseName = DATABASE_NAME;
-    const collectionName = 'prosumers';
-    const prosumer = {email, password};
-
-    return require('./mongo.js')
-        .insertOne(undefined, databaseName, collectionName, prosumer);
-};
-
-exports.connectProsumer = function (email, password) {
-    const databaseName = DATABASE_NAME;
-    const collectionName = 'prosumers';
-
-    const prosumer = {
-        email,
-        password
-    };
-    const token = generateToken();
-    const updateOperation = {$set: {token}};
-
-    return require('./mongo.js')
-        .updateOne(undefined, databaseName, collectionName, prosumer, updateOperation)
-        .then(() => {
-            console.log(`User connected with token '${token}'`);
-            return token;
-        });
-};
-
-exports.disconnectProsumer = function (token) {
-    const databaseName = DATABASE_NAME;
-    const collectionName = 'prosumers';
-    const prosumer = {
-        token
-    };
-    const updateOperation = {$set: {token: null}};
-
-    return require('./mongo.js')
-        .updateOne(undefined, databaseName, collectionName, prosumer, updateOperation)
-        .then(() => {
-            console.log(`User connected with token '${token}' has been disconnected`);
-            return token;
-        });
-};
-
-function generateToken () {
-    const crypto = require("crypto");
-    return crypto.randomBytes(16).toString("hex");
-}
-
-exports.getProsumerElectricityConsumption = function (token, date){
-    const databaseName = 'greenleanelectrics';
-    const collectionName = 'prosumers';
-
-    var dailyConsumptionPerPerson = 27;
-    var morningConsumption = 21;
-    var afternoonConsumption = dailyConsumptionPerPerson - morningConsumption;
-
-    const prosumertoken = {
-        token
-    };
-
-    return require('./mongo.js')
-        .find(undefined, databaseName, collectionName, prosumertoken)
-        .then((resultats) => {
-            var changing_value = resultats[0].email.length ;
-
-            if (resultats[0].email.length % 2 === 0)
-                changing_value = -changing_value;
-
-            dailyConsumptionPerPerson += changing_value/8;
-            morningConsumption += changing_value/10;
-
-            return getElectricityConsumption(date, morningConsumption, afternoonConsumption, 1);
-        });
-
 };
