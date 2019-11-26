@@ -21,4 +21,4 @@ const routes = {
 
 const staticFiles = {};
 
-server.createServer(__dirname, staticFiles, routes, port);
+server.createServer(staticFiles, routes, port);
