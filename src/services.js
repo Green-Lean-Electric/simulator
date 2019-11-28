@@ -100,7 +100,7 @@ exports.getCurrentElectricityPrice = async function (date) {
     const maxPrice = 2;
     const minPrice = 1;
 
-    const electricityConsumption = (await exports.getWholeElectricityConsumption(date)).electricityConsumption;
+    const electricityConsumption = (await exports.getElectricityConsumption(date,"TODO")).electricityConsumption;
     const windSpeed = exports.getWindSpeed(new Date()).windSpeed;
 
     const price = Math.max(
@@ -119,4 +119,10 @@ exports.getCurrentElectricityPrice = async function (date) {
     database.insertOne(undefined, DATABASE_NAME, 'currentPrice', priceAsJson);
 
     return priceAsJson;
+};
+
+
+exports.getElectricityProduction = function (date) {
+    console.log(exports.getWindSpeed(date));
+    return 20 * exports.getWindSpeed(date).windSpeed / 100; //à 100km/h produit 20kw
 };

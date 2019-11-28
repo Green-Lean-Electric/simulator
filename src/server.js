@@ -17,6 +17,9 @@ const routes = {
     '/getCurrentElectricityPrice': () => service.getCurrentElectricityPrice(
         new Date()
     ),
+    '/getElectricityProduction': () => service.getElectricityProduction(
+        new Date()
+    ),
 };
 
 const staticFiles = {};
