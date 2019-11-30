@@ -1,6 +1,6 @@
-const service = require('./services.js');
-const server = require('../../utils/src/server.js');
-const configuration = require('../../utils/src/configuration.js');
+const service = require('./services');
+const server = require('../../utils/src/server');
+const configuration = require('../../utils/src/configuration');
 
 const port = configuration
     .serversConfiguration

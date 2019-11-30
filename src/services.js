@@ -1,4 +1,4 @@
-const database = require('../../utils/src/mongo.js');
+const database = require('../../utils/src/mongo');
 
 const gaussianFunction = (expectedValue, standardValue, x) => (
     1.0 / (standardValue * Math.sqrt(2 * Math.PI))
