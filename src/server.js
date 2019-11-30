@@ -1,25 +1,44 @@
 const service = require('./services.js');
 const server = require('../../utils/src/server.js');
+const configuration = require('../../utils/src/configuration.js');
 
-const port = require('../../utils/src/configuration.js')
+const port = configuration
     .serversConfiguration
     .simulator
     .port;
 
+const prosumerUrl = 'http://' + configuration.serversConfiguration.prosumer.hostname + ":" + configuration.serversConfiguration.prosumer.port;
+
 const routes = {
-    '/getWindSpeed': () => service.getWindSpeed(
-        new Date()
-    ),
-    '/getElectricityConsumption': request => service.getElectricityConsumption(
-        new Date(),
-        server.getParam(request, 'prosumerId'),
-    ),
-    '/getCurrentElectricityPrice': () => service.getCurrentElectricityPrice(
-        new Date()
-    ),
-    '/getElectricityProduction': () => service.getElectricityProduction(
-        new Date()
-    ),
+    '/getWindSpeed': (_, res) => {
+        res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
+        res.setHeader('Content-type', 'application/json');
+        return service.getWindSpeed(
+            new Date()
+        );
+    },
+    '/getElectricityConsumption': (request, res) => {
+        res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
+        res.setHeader('Content-type', 'application/json');
+        return service.getElectricityConsumption(
+            new Date(),
+            server.getParam(request, 'prosumerId'),
+        );
+    },
+    '/getCurrentElectricityPrice': (_, res) => {
+        res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
+        res.setHeader('Content-type', 'application/json');
+        return service.getCurrentElectricityPrice(
+            new Date()
+        );
+    },
+    '/getElectricityProduction': (_, res) => {
+        res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
+        res.setHeader('Content-type', 'application/json');
+        return service.getElectricityProduction(
+            new Date()
+        );
+    },
 };
 
 const staticFiles = {};
