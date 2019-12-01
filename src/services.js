@@ -123,6 +123,5 @@ exports.getCurrentElectricityPrice = async function (date) {
 
 
 exports.getElectricityProduction = function (date) {
-    console.log(exports.getWindSpeed(date));
     return 20 * exports.getWindSpeed(date).windSpeed / 100; //à 100km/h produit 20kw
 };

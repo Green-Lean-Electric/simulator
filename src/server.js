@@ -10,29 +10,29 @@ const port = configuration
 const prosumerUrl = 'http://' + configuration.serversConfiguration.prosumer.hostname + ":" + configuration.serversConfiguration.prosumer.port;
 
 const routes = {
-    '/getWindSpeed': (_, res) => {
+    '/getWindSpeed': (_, __, res) => {
         res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
         res.setHeader('Content-type', 'application/json');
         return service.getWindSpeed(
             new Date()
         );
     },
-    '/getElectricityConsumption': (request, res) => {
+    '/getElectricityConsumption': (request, parameters, res) => {
         res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
         res.setHeader('Content-type', 'application/json');
         return service.getElectricityConsumption(
             new Date(),
-            server.getParam(request, 'prosumerId'),
+            parameters.prosumerId
         );
     },
-    '/getCurrentElectricityPrice': (_, res) => {
+    '/getCurrentElectricityPrice': (_, __, res) => {
         res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
         res.setHeader('Content-type', 'application/json');
         return service.getCurrentElectricityPrice(
             new Date()
         );
     },
-    '/getElectricityProduction': (_, res) => {
+    '/getElectricityProduction': (_, __, res) => {
         res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
         res.setHeader('Content-type', 'application/json');
         return service.getElectricityProduction(
