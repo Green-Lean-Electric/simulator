@@ -1,4 +1,5 @@
 const database = require('../../utils/src/mongo');
+const server = require('../../utils/src/server');
 
 const gaussianFunction = (expectedValue, standardValue, x) => (
     1.0 / (standardValue * Math.sqrt(2 * Math.PI))
@@ -40,7 +41,7 @@ exports.getWindSpeed = function (date) {
         date: date
     };
 
-    database.insertOne(undefined, DATABASE_NAME, 'windSpeed', windSpeedAsJson);
+    database.insertOne(DATABASE_NAME, 'windSpeed', windSpeedAsJson);
 
     return windSpeedAsJson;
 };
@@ -88,7 +89,7 @@ function computeElectricityConsumption(date, morningConsumption, afternoonConsum
             )
     };
 
-    database.insertOne(undefined, DATABASE_NAME, 'consumption', electricityConsumption);
+    database.insertOne(DATABASE_NAME, 'consumption', electricityConsumption);
 
     return electricityConsumption;
 }
@@ -116,7 +117,7 @@ exports.getCurrentElectricityPrice = async function (date) {
         date: date
     };
 
-    database.insertOne(undefined, DATABASE_NAME, 'currentPrice', priceAsJson);
+    database.insertOne(DATABASE_NAME, 'currentPrice', priceAsJson);
 
     return priceAsJson;
 };
