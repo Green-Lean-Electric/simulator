@@ -7,39 +7,49 @@ const port = configuration
     .simulator
     .port;
 
-const prosumerUrl = 'http://' + configuration.serversConfiguration.prosumer.hostname + ":" + configuration.serversConfiguration.prosumer.port;
+const allowedOrigins = [
+    'http://' + configuration.serversConfiguration.prosumer.hostname + ":" + configuration.serversConfiguration.prosumer.port,
+    'http://' + configuration.serversConfiguration.manager .hostname + ":" + configuration.serversConfiguration.manager .port
+];
 
 const routes = {
-    '/getWindSpeed': (_, __, res) => {
-        res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
+    '/getWindSpeed': (req, __, res) => {
+        setAccessControl(req, res);
         res.setHeader('Content-type', 'application/json');
         return service.getWindSpeed(
             new Date()
         );
     },
     '/getElectricityConsumption': (request, parameters, res) => {
-        res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
+        setAccessControl(request, res);
         res.setHeader('Content-type', 'application/json');
         return service.getElectricityConsumption(
             new Date(),
             parameters.prosumerId
         );
     },
-    '/getCurrentElectricityPrice': (_, __, res) => {
-        res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
+    '/getCurrentElectricityPrice': (req, __, res) => {
+        setAccessControl(req, res);
         res.setHeader('Content-type', 'application/json');
         return service.getCurrentElectricityPrice(
             new Date()
         );
     },
-    '/getElectricityProduction': (_, __, res) => {
-        res.setHeader('Access-Control-Allow-Origin', prosumerUrl);
+    '/getElectricityProduction': (req, __, res) => {
+        setAccessControl(req, res);
         res.setHeader('Content-type', 'application/json');
         return service.getElectricityProduction(
             new Date()
         );
     },
 };
+
+function setAccessControl(req, res) {
+    const origin = req.headers.origin;
+    if(allowedOrigins.indexOf(origin) > -1){
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+}
 
 const staticFiles = {};
 
