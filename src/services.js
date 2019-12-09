@@ -126,3 +126,52 @@ exports.getCurrentElectricityPrice = async function (date) {
 exports.getElectricityProduction = function (date) {
     return 20 * exports.getWindSpeed(date).windSpeed / 100; //à 100km/h produit 20kw
 };
+
+exports.computePowerPlantElectricityProduction = function (newProduction, token) {
+    const databaseName = DATABASE_NAME;
+    const collectionName = 'managers';
+console.log(token);
+    return database.find(databaseName, collectionName, {token})
+        .then(results => {
+            if (results.length === 1) {
+                return results[0];
+            }
+            throw `No known manager with this token: ${token}`;
+        }).then(manager => {
+            if(!manager.hasOwnProperty('productionModficationTime')){
+                const updateOperation = {$set: {"productionModficationTime": Date.now()}};
+                return database.updateOne(databaseName, collectionName, {token}, updateOperation)
+                    .then((nbModified) => {
+                        if(nbModified == 1){
+                            database.find(databaseName, collectionName, {token})
+                                .then(results => {
+                                    if (results.length === 1) {
+                                        return results[0];
+                                    }
+                                    throw `No known manager with this token: ${token}`;
+                                });
+                        }
+                });
+            } else
+                return manager;
+        }).then(manager => { console.log(manager);
+            var i = Date.now() - manager.productionModficationTime;
+            var newpowerPlantProduction = manager.powerPlantProduction;
+            var updateOperation;
+
+            if(i < 30000){
+                newpowerPlantProduction = manager.powerPlantProduction + (((newProduction - manager.powerPlantProduction ) / 30) * i * 0.001); //jusqu'à 700 MW /an
+                updateOperation = {$set: {"powerPlantProduction": newpowerPlantProduction}};
+            } else {
+                updateOperation = {$set: {"powerPlantProduction": newpowerPlantProduction},
+                                    $unset: {"productionModficationTime": ""}};
+            }
+
+            return database.updateOne(databaseName, collectionName, {token}, updateOperation)
+                .then((nbModified) => {
+                    if(nbModified == 1){
+                        return newpowerPlantProduction;
+                    }
+            });
+        });
+};
