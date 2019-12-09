@@ -143,7 +143,7 @@ console.log(token);
                 return database.updateOne(databaseName, collectionName, {token}, updateOperation)
                     .then((nbModified) => {
                         if(nbModified == 1){
-                            database.find(databaseName, collectionName, {token})
+                            return database.find(databaseName, collectionName, {token})
                                 .then(results => {
                                     if (results.length === 1) {
                                         return results[0];
@@ -154,11 +154,11 @@ console.log(token);
                 });
             } else
                 return manager;
-        }).then(manager => { console.log(manager);
+        }).then(manager => {
             var i = Date.now() - manager.productionModficationTime;
             var newpowerPlantProduction = manager.powerPlantProduction;
             var updateOperation;
-
+console.log(i);
             if(i < 30000){
                 newpowerPlantProduction = manager.powerPlantProduction + (((newProduction - manager.powerPlantProduction ) / 30) * i * 0.001); //jusqu'à 700 MW /an
                 updateOperation = {$set: {"powerPlantProduction": newpowerPlantProduction}};
