@@ -127,10 +127,12 @@ exports.getElectricityProduction = function (date) {
     return 20 * exports.getWindSpeed(date).windSpeed / 100; //à 100km/h produit 20kw
 };
 
-exports.computePowerPlantElectricityProduction = function (newProduction, token) {
+exports.computePowerPlantElectricityProduction = function (data) {
+console.log(data);
     const databaseName = DATABASE_NAME;
     const collectionName = 'managers';
-console.log(token);
+    var token = data.token;
+    var newProduction = data.newProduction;
     return database.find(databaseName, collectionName, {token})
         .then(results => {
             if (results.length === 1) {
