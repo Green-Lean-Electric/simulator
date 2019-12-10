@@ -42,7 +42,15 @@ const routes = {
             new Date()
         );
     },
-    '/computePowerPlantElectricityProduction': (req, parameters) => service.computePowerPlantElectricityProduction(parameters),
+    '/computePowerPlantElectricityProduction': (req, parameters, res) => {
+        setAccessControl(req, res);
+        res.setHeader('Content-type', 'application/json');
+        if (req.method.toLowerCase() === 'options') {
+            res.setHeader('Access-Control-Allow-Headers', 'content-type');
+            return {};
+        }
+        return service.computePowerPlantElectricityProduction(parameters);
+    },
 };
 
 function setAccessControl(req, res) {

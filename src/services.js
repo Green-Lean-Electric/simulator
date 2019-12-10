@@ -52,7 +52,7 @@ exports.getElectricityConsumption = function (date, prosumerId) {
     let morningConsumption = 21;
     let afternoonConsumption = dailyConsumptionPerPerson - morningConsumption;
 
-    var changing_value = prosumerId.length ;
+    var changing_value = prosumerId.length;
 
     if (prosumerId.length % 2 === 0)
         changing_value = -changing_value;
@@ -63,7 +63,7 @@ exports.getElectricityConsumption = function (date, prosumerId) {
     return computeElectricityConsumption(date, morningConsumption, afternoonConsumption);
 };
 
-function computeElectricityConsumption(date, morningConsumption, afternoonConsumption){
+function computeElectricityConsumption(date, morningConsumption, afternoonConsumption) {
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const seconds = date.getSeconds();
@@ -101,7 +101,7 @@ exports.getCurrentElectricityPrice = async function (date) {
     const maxPrice = 2;
     const minPrice = 1;
 
-    const electricityConsumption = (await exports.getElectricityConsumption(date,"TODO")).electricityConsumption;
+    const electricityConsumption = (await exports.getElectricityConsumption(date, "TODO")).electricityConsumption;
     const windSpeed = exports.getWindSpeed(new Date()).windSpeed;
 
     const price = Math.max(
@@ -128,7 +128,7 @@ exports.getElectricityProduction = function (date) {
 };
 
 exports.computePowerPlantElectricityProduction = function (data) {
-console.log(data);
+    console.log(data);
     const databaseName = DATABASE_NAME;
     const collectionName = 'managers';
     var token = data.token;
@@ -140,11 +140,11 @@ console.log(data);
             }
             throw `No known manager with this token: ${token}`;
         }).then(manager => {
-            if(!manager.hasOwnProperty('productionModficationTime')){
+            if (!manager.hasOwnProperty('productionModficationTime')) {
                 const updateOperation = {$set: {"productionModficationTime": Date.now()}};
                 return database.updateOne(databaseName, collectionName, {token}, updateOperation)
                     .then((nbModified) => {
-                        if(nbModified == 1){
+                        if (nbModified == 1) {
                             return database.find(databaseName, collectionName, {token})
                                 .then(results => {
                                     if (results.length === 1) {
@@ -153,27 +153,29 @@ console.log(data);
                                     throw `No known manager with this token: ${token}`;
                                 });
                         }
-                });
+                    });
             } else
                 return manager;
         }).then(manager => {
             var i = Date.now() - manager.productionModficationTime;
             var newpowerPlantProduction = manager.powerPlantProduction;
             var updateOperation;
-console.log(i);
-            if(i < 30000){
-                newpowerPlantProduction = manager.powerPlantProduction + (((newProduction - manager.powerPlantProduction ) / 30) * i * 0.001); //jusqu'à 700 MW /an
+            console.log(i);
+            if (i < 30000) {
+                newpowerPlantProduction = manager.powerPlantProduction + (((newProduction - manager.powerPlantProduction) / 30) * i * 0.001); //jusqu'à 700 MW /an
                 updateOperation = {$set: {"powerPlantProduction": newpowerPlantProduction}};
             } else {
-                updateOperation = {$set: {"powerPlantProduction": newpowerPlantProduction},
-                                    $unset: {"productionModficationTime": ""}};
+                updateOperation = {
+                    $set: {"powerPlantProduction": newpowerPlantProduction},
+                    $unset: {"productionModficationTime": ""}
+                };
             }
 
             return database.updateOne(databaseName, collectionName, {token}, updateOperation)
                 .then((nbModified) => {
-                    if(nbModified == 1){
+                    if (nbModified == 1) {
                         return newpowerPlantProduction;
                     }
-            });
+                });
         });
 };
