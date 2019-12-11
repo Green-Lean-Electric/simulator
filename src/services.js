@@ -1,5 +1,5 @@
 const database = require('../../utils/src/mongo');
-const server = require('../../utils/src/server');
+const utils = require('../../utils/src/server');
 
 const gaussianFunction = (expectedValue, standardValue, x) => (
     1.0 / (standardValue * Math.sqrt(2 * Math.PI))
@@ -52,10 +52,11 @@ exports.getElectricityConsumption = function (date, prosumerId) {
     let morningConsumption = 21;
     let afternoonConsumption = dailyConsumptionPerPerson - morningConsumption;
 
-    var changing_value = prosumerId.length;
+    let changing_value = prosumerId.length;
 
-    if (prosumerId.length % 2 === 0)
+    if (prosumerId.length % 2 === 0) {
         changing_value = -changing_value;
+    }
 
     afternoonConsumption += afternoonConsumption * changing_value / 100;
     morningConsumption += morningConsumption * changing_value / 100;
@@ -127,12 +128,9 @@ exports.getElectricityProduction = function (date) {
     return 20 * exports.getWindSpeed(date).windSpeed / 100; //à 100km/h produit 20kw
 };
 
-exports.computePowerPlantElectricityProduction = function (data) {
-    console.log(data);
+exports.getPowerPlantElectricityProduction = function (token) {
     const databaseName = DATABASE_NAME;
     const collectionName = 'managers';
-    var token = data.token;
-    var newProduction = data.newProduction;
     return database.find(databaseName, collectionName, {token})
         .then(results => {
             if (results.length === 1) {
@@ -140,42 +138,14 @@ exports.computePowerPlantElectricityProduction = function (data) {
             }
             throw `No known manager with this token: ${token}`;
         }).then(manager => {
-            if (!manager.hasOwnProperty('productionModficationTime')) {
-                const updateOperation = {$set: {"productionModficationTime": Date.now()}};
-                return database.updateOne(databaseName, collectionName, {token}, updateOperation)
-                    .then((nbModified) => {
-                        if (nbModified == 1) {
-                            return database.find(databaseName, collectionName, {token})
-                                .then(results => {
-                                    if (results.length === 1) {
-                                        return results[0];
-                                    }
-                                    throw `No known manager with this token: ${token}`;
-                                });
-                        }
-                    });
-            } else
-                return manager;
-        }).then(manager => {
-            var i = Date.now() - manager.productionModficationTime;
-            var newpowerPlantProduction = manager.powerPlantProduction;
-            var updateOperation;
-            console.log(i);
-            if (i < 30000) {
-                newpowerPlantProduction = manager.powerPlantProduction + (((newProduction - manager.powerPlantProduction) / 30) * i * 0.001); //jusqu'à 700 MW /an
-                updateOperation = {$set: {"powerPlantProduction": newpowerPlantProduction}};
-            } else {
-                updateOperation = {
-                    $set: {"powerPlantProduction": newpowerPlantProduction},
-                    $unset: {"productionModficationTime": ""}
-                };
+            const currentStep = Date.now() - (manager.productionModificationTime || Date.now());
+            return {
+                newProduction: utils.computeLinearFunction(
+                    manager.powerPlantProduction || 0,
+                    manager.newProduction || 0,
+                    30,
+                    currentStep / 1000
+                )
             }
-
-            return database.updateOne(databaseName, collectionName, {token}, updateOperation)
-                .then((nbModified) => {
-                    if (nbModified == 1) {
-                        return newpowerPlantProduction;
-                    }
-                });
         });
 };
