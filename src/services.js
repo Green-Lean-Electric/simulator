@@ -47,9 +47,9 @@ exports.getWindSpeed = function (date) {
 };
 
 exports.getElectricityConsumption = function (date, prosumerId) {
-    const dailyConsumptionPerPerson = 27;
+    const dailyConsumptionPerPerson = 2700; //Watt
 
-    let morningConsumption = 21;
+    let morningConsumption = 2100;
     let afternoonConsumption = dailyConsumptionPerPerson - morningConsumption;
 
     let changing_value = prosumerId.length;
@@ -125,7 +125,7 @@ exports.getCurrentElectricityPrice = async function (date) {
 
 
 exports.getElectricityProduction = function (date) {
-    return 20 * exports.getWindSpeed(date).windSpeed / 100; //à 100km/h produit 20kw
+    return 2000 * exports.getWindSpeed(date).windSpeed / 100; //à 100km/h produit 20kw
 };
 
 exports.getPowerPlantElectricityProduction = function (token) {
