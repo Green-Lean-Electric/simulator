@@ -77,16 +77,18 @@ function computeElectricityConsumption(date, morningConsumption, afternoonConsum
     let electricityConsumption = {
         "electricityConsumption":
             (
-                gaussianFunction(
-                    morningTopTimestamp,
-                    21600,
-                    currentTimestamp
-                ) * morningConsumption
-                + gaussianFunction(
-                    afternoonTopHourTimestamp,
-                    5400,
-                    currentTimestamp
-                ) * afternoonConsumption
+                (
+                    gaussianFunction(
+                        morningTopTimestamp,
+                        21600,
+                        currentTimestamp
+                    ) * morningConsumption
+                    + gaussianFunction(
+                        afternoonTopHourTimestamp,
+                        5400,
+                        currentTimestamp
+                    ) * afternoonConsumption
+                ) * 100
             )
     };
 
