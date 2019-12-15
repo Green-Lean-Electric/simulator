@@ -11,30 +11,6 @@ const gaussianFunction = (expectedValue, standardValue, x) => (
 
 const DATABASE_NAME = 'greenleanelectrics';
 
-exports.getCurrentElectricityPrice = async function (date) {
-    const windSpeedCoeff = -1;
-    const consumptionCoeff = 500;
-
-    const maxPrice = 2;
-    const minPrice = 1;
-
-    const electricityConsumption = (await exports.getElectricityConsumption(date, "TODO")).electricityConsumption;
-    const windSpeed = exports.getWindSpeed(new Date()).windSpeed;
-
-    const price = Math.max(
-        Math.min(
-            consumptionCoeff * electricityConsumption + windSpeedCoeff * Math.log(windSpeed),
-            maxPrice
-        ),
-        minPrice
-    );
-
-    return {
-        currentElectricityPrice: price,
-        date: date
-    };
-};
-
 exports.getPowerPlantElectricityProduction = function (token) {
     const databaseName = DATABASE_NAME;
     const collectionName = 'managers';
@@ -58,18 +34,24 @@ exports.updateData = function () {
         database.find(DATABASE_NAME, 'powerPlants'),
     ]).then(([prosumers, powerPlants]) => ({
         prosumers: prosumers.map(
-            prosumer => [
-                prosumer,
-                computeWindSpeed(date),
-                computeProsumerConsumption(date, prosumer.email),
-                computeProduction(date)
-            ]
+            prosumer => {
+                const windSpeed = computeWindSpeed(date);
+                const consumption = computeProsumerConsumption(date, prosumer.email);
+                const production = computeProduction(date);
+                return [
+                    prosumer,
+                    windSpeed,
+                    consumption,
+                    production
+                ];
+            }
         ),
         powerPlants: powerPlants.map(powerPlant => {
             powerPlant.currentProduction = computePowerPlantProduction(powerPlant);
             powerPlant.date = date;
             return powerPlant;
         }),
+        computedPrice: computeCurrentElectricityPrice(),
         date: date.getTime()
     })).then(storeData);
 };
@@ -166,6 +148,11 @@ function computeProduction(date) {
     return floor(50 * windSpeed);
 }
 
+function computeCurrentElectricityPrice() {
+    // FIXME
+    return 1.5;
+}
+
 function computePowerPlantProduction(powerPlant) {
     const currentStep = Date.now() - (powerPlant.productionModificationTime || Date.now());
     return utils.computeLinearFunction(
@@ -194,6 +181,9 @@ function storeData(data) {
         }
         updatePowerPlant(powerPlant);
     }
+
+    updateMarket(currentMarketElectricity, data.computedPrice, data.date);
+
     return data;
 }
 
@@ -245,11 +235,26 @@ function updateProsumer(prosumer, consumption, production, windSpeed, currentMar
 
 function updatePowerPlant(powerPlant) {
     const operation = {
-        '$set': {
-            powerPlant
-        }
+        '$set': powerPlant
     };
-    database.updateOne(DATABASE_NAME, 'powerPlants', powerPlant, operation)
+    database.updateOne(DATABASE_NAME, 'powerPlants', {
+        _id: powerPlant._id
+    }, operation);
+}
+
+function updateMarket(electricity, computedPrice, date) {
+    database.findLast(DATABASE_NAME, 'market', {}, 'date')
+        .then(lastMarket => {
+            const actualPrice = lastMarket
+                ? lastMarket.actualPrice
+                : computedPrice;
+            database.insertOne(DATABASE_NAME, 'market', {
+                electricity,
+                computedPrice,
+                actualPrice,
+                date
+            })
+        });
 }
 
 function findPowerPlantOfManager(manager) {
@@ -270,7 +275,8 @@ exports.initializeSimulator = function () {
             currentProduction: 0,
             productionRatioBuffer: 0.7,
             productionRatioMarket: 0.3,
-            lastModification: Date.now()
+            lastModification: Date.now(),
+            managers: []
         });
     }
 
