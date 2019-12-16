@@ -47,7 +47,33 @@ exports.updateData = function () {
             }
         ),
         powerPlants: powerPlants.map(powerPlant => {
-            powerPlant.currentProduction = computePowerPlantProduction(powerPlant);
+            const currentProduction = utils.computeLinearFunction(
+                powerPlant.oldProduction || 0,
+                powerPlant.futureProduction || 0,
+                30,
+                (date - powerPlant.productionModificationTime) / 1000
+            );
+            const oldProduction = currentProduction === powerPlant.futureProduction
+                ? powerPlant.futureProduction
+                : powerPlant.oldProduction;
+
+            // If the old production is 0, the plant was stopped so it's now starting.
+            // If the current production is 0, then the plant is stopped.
+            // Otherwise it's running.
+            const status = powerPlant.currentProduction === 0
+                ? 0
+                : powerPlant.oldProduction === 0  && powerPlant.futureProduction > 0
+                    ? 1
+                    : 2;
+
+            powerPlant.bufferFilling = Math.min(
+                powerPlant.bufferSize,
+                currentProduction * powerPlant.productionRatioBuffer + powerPlant.bufferFilling
+            );
+
+            powerPlant.currentProduction = currentProduction;
+            powerPlant.oldProduction = oldProduction;
+            powerPlant.status = status;
             powerPlant.date = date;
             return powerPlant;
         }),
