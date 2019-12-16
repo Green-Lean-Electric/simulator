@@ -62,7 +62,7 @@ exports.updateData = function () {
             // Otherwise it's running.
             const status = powerPlant.currentProduction === 0
                 ? 0
-                : powerPlant.oldProduction === 0  && powerPlant.futureProduction > 0
+                : powerPlant.oldProduction === 0 && powerPlant.futureProduction > 0
                     ? 1
                     : 2;
 
@@ -77,7 +77,10 @@ exports.updateData = function () {
             powerPlant.date = date;
             return powerPlant;
         }),
-        computedPrice: computeCurrentElectricityPrice(),
+        market: {
+            computedPrice: computeCurrentElectricityPrice(),
+            demand: computeMarketDemand(prosumers)
+        },
         date: date.getTime()
     })).then(storeData);
 };
@@ -179,14 +182,22 @@ function computeCurrentElectricityPrice() {
     return 1.5;
 }
 
-function computePowerPlantProduction(powerPlant) {
-    const currentStep = Date.now() - (powerPlant.productionModificationTime || Date.now());
-    return utils.computeLinearFunction(
-        powerPlant.oldProduction || 0,
-        powerPlant.futureProduction || 0,
-        30,
-        currentStep / 1000
-    );
+function computeMarketDemand(prosumers) {
+    return prosumers.map(
+        prosumer => computeDemandOfProsumer(prosumer, prosumer.consumption, prosumer.production)
+    ).reduce((a, b) => a + b, 0);
+}
+
+function computeDemandOfProsumer(prosumer, consumption, production) {
+    if (production >= consumption) {
+        return 0;
+    } else {
+        if ((consumption - production) * prosumer.consumptionRatioBuffer <= prosumer.bufferFilling) {
+            return (consumption - production) * prosumer.consumptionRatioMarket;
+        } else {
+            return consumption - production - prosumer.bufferFilling;
+        }
+    }
 }
 
 function storeData(data) {
@@ -208,7 +219,7 @@ function storeData(data) {
         updatePowerPlant(powerPlant);
     }
 
-    updateMarket(currentMarketElectricity, data.computedPrice, data.date);
+    updateMarket(currentMarketElectricity, data.market, data.date);
 
     return data;
 }
@@ -241,7 +252,7 @@ function updateProsumer(prosumer, consumption, production, windSpeed, currentMar
         prosumer.electricySentToTheMarket = productionConsumptionDifference * prosumer.productionRatioMarket;
     } else {
         if (currentMarketElectricity > -productionConsumptionDifference * prosumer.consumptionRatioMarket
-        && prosumer.bufferFilling > -productionConsumptionDifference * prosumer.consumptionRatioBuffer) {
+            && prosumer.bufferFilling > -productionConsumptionDifference * prosumer.consumptionRatioBuffer) {
             prosumer.boughtElectricity = -productionConsumptionDifference * prosumer.consumptionRatioMarket;
             prosumer.bufferFilling += productionConsumptionDifference * prosumer.consumptionRatioBuffer;
         } else {
@@ -269,15 +280,16 @@ function updatePowerPlant(powerPlant) {
     }, operation);
 }
 
-function updateMarket(electricity, computedPrice, date) {
+function updateMarket(electricity, market, date) {
     database.findLast(DATABASE_NAME, 'market', {}, 'date')
         .then(lastMarket => {
             const actualPrice = lastMarket
                 ? lastMarket.actualPrice
-                : computedPrice;
+                : market.computedPrice;
             database.insertOne(DATABASE_NAME, 'market', {
                 electricity,
-                computedPrice,
+                computedPrice: market.computedPrice,
+                demand: market.demand,
                 actualPrice,
                 date
             })
