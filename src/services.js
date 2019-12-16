@@ -52,7 +52,7 @@ exports.updateData = function () {
                 powerPlant.futureProduction || 0,
                 30,
                 (date - powerPlant.productionModificationTime) / 1000
-            );
+            ) || 0;
             const oldProduction = currentProduction === powerPlant.futureProduction
                 ? powerPlant.futureProduction
                 : powerPlant.oldProduction;
@@ -287,9 +287,9 @@ function updateMarket(electricity, market, date) {
                 ? lastMarket.actualPrice
                 : market.computedPrice;
             database.insertOne(DATABASE_NAME, 'market', {
-                electricity,
+                electricity: electricity || 0,
                 computedPrice: market.computedPrice,
-                demand: market.demand,
+                demand: market.demand || 0,
                 actualPrice,
                 date
             })
@@ -304,7 +304,7 @@ function findPowerPlantOfManager(manager) {
 exports.initializeSimulator = function () {
     function insertNewPowerPlant() {
         return database.insertOne(DATABASE_NAME, 'powerPlants', {
-            status: 2,
+            status: 0,
 
             bufferSize: 79200,
             bufferFilling: 0,
