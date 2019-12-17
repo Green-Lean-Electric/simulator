@@ -37,7 +37,7 @@ exports.updateData = function () {
             prosumer => {
                 const windSpeed = computeWindSpeed(date);
                 const consumption = computeProsumerConsumption(date, prosumer.email);
-                const production = computeProduction(date);
+                const production = computeProduction(windSpeed);
                 return [
                     prosumer,
                     windSpeed,
@@ -109,7 +109,13 @@ function computeWindSpeed(date) {
             * gaussianFunction(0, 8000, dateSinceStartOfYear - point * Math.cos(dateSinceStartOfYear)))
         .reduce((accumulator, currentValue) => accumulator + currentValue);
 
-    return floor(windSpeed);
+    return Math.min(
+        100,
+        Math.max(
+            5,
+            floor(windSpeed)
+        )
+    );
 }
 
 function computeProsumerConsumption(date, prosumerId) {
@@ -136,7 +142,7 @@ function computeProsumerConsumption(date, prosumerId) {
     const morningTopTimestamp = 11 * 3600;
     const afternoonTopHourTimestamp = 19 * 3600 + 30 * 60;
 
-    return (
+    return Math.floor((
         gaussianFunction(
             morningTopTimestamp,
             21600,
@@ -147,34 +153,11 @@ function computeProsumerConsumption(date, prosumerId) {
             5400,
             currentTimestamp
         ) * afternoonConsumption
-    ) * 100;
+    ) * 500 * 100)/100.0;
 }
 
-function computeProduction(date) {
-    function floor(x) {
-        const maxDecimals = 0;
-        const coefficient = Math.pow(10, maxDecimals);
-        return Math.floor(x * coefficient) / coefficient;
-    }
-
-    const windPointsNumber = 1000;
-    const maxWindSpeed = 2000;
-
-    const yearStart = new Date(date.getFullYear(), 0).getTime();
-    const yearEnd = new Date(date.getFullYear(), 11, 31).getTime();
-    const hoursInYear = (yearEnd - yearStart) / 1000 / 60 / 60;
-
-    const dateSinceStartOfYear = (date.getTime() - yearStart) / 1000 / 60 / 60;
-
-    const step = hoursInYear / 8;
-    let windSpeed = [...Array(windPointsNumber).keys()]
-        .map(point => point * step)
-        .map(point => maxWindSpeed
-            * (1 + Math.cos(dateSinceStartOfYear))
-            * gaussianFunction(0, 8000, dateSinceStartOfYear - point * Math.cos(dateSinceStartOfYear)))
-        .reduce((accumulator, currentValue) => accumulator + currentValue);
-
-    return floor(50 * windSpeed);
+function computeProduction(windSpeed) {
+    return Math.floor(5 * Math.log2(windSpeed) * 100) / 100.0;
 }
 
 function computeCurrentElectricityPrice() {
