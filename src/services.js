@@ -32,57 +32,59 @@ exports.updateData = function () {
     return Promise.all([
         database.find(DATABASE_NAME, 'prosumers'),
         database.find(DATABASE_NAME, 'powerPlants'),
-    ]).then(([prosumers, powerPlants]) => ({
-        prosumers: prosumers.map(
-            prosumer => {
-                const windSpeed = computeWindSpeed(date);
-                const consumption = computeProsumerConsumption(date, prosumer.email);
-                const production = computeProduction(windSpeed);
-                return [
-                    prosumer,
-                    windSpeed,
-                    consumption,
-                    production
-                ];
-            }
-        ),
-        powerPlants: powerPlants.map(powerPlant => {
-            const currentProduction = utils.computeLinearFunction(
-                powerPlant.oldProduction || 0,
-                powerPlant.futureProduction || 0,
-                30,
-                (date - powerPlant.productionModificationTime) / 1000
-            ) || 0;
-            const oldProduction = currentProduction === powerPlant.futureProduction
-                ? powerPlant.futureProduction
-                : powerPlant.oldProduction;
+    ]).then(([prosumers, powerPlants]) => {
 
-            // If the old production is 0, the plant was stopped so it's now starting.
-            // If the current production is 0, then the plant is stopped.
-            // Otherwise it's running.
-            const status = powerPlant.currentProduction === 0
-                ? 0
-                : powerPlant.oldProduction === 0 && powerPlant.futureProduction > 0
-                    ? 1
-                    : 2;
+        return ({
+            prosumers: prosumers.map(
+                prosumer => {
+                    const windSpeed = computeWindSpeed(date);
+                    const consumption = computeProsumerConsumption(date, prosumer.email);
+                    const production = computeProduction(windSpeed);
+                    return [
+                        prosumer,
+                        windSpeed,
+                        consumption,
+                        production
+                    ];
+                }
+            ),
+            powerPlants: powerPlants.map(powerPlant => {
+                const currentProduction = utils.computeLinearFunction(
+                    powerPlant.oldProduction || 0,
+                    powerPlant.futureProduction || 0,
+                    30,
+                    (date - powerPlant.productionModificationTime) / 1000
+                ) || 0;
+                const oldProduction = currentProduction === powerPlant.futureProduction
+                    ? powerPlant.futureProduction
+                    : powerPlant.oldProduction;
 
-            powerPlant.bufferFilling = Math.min(
-                powerPlant.bufferSize,
-                currentProduction * powerPlant.productionRatioBuffer + powerPlant.bufferFilling
-            );
+                // If the old production is 0, the plant was stopped so it's now starting.
+                // If the current production is 0, then the plant is stopped.
+                // Otherwise it's running.
+                const status = powerPlant.currentProduction === 0
+                    ? 0
+                    : powerPlant.oldProduction === 0 && powerPlant.futureProduction > 0
+                        ? 1
+                        : 2;
 
-            powerPlant.currentProduction = currentProduction;
-            powerPlant.oldProduction = oldProduction;
-            powerPlant.status = status;
-            powerPlant.date = date;
-            return powerPlant;
-        }),
-        market: {
-            computedPrice: computeCurrentElectricityPrice(),
-            demand: computeMarketDemand(prosumers)
-        },
-        date: date.getTime()
-    })).then(storeData);
+                powerPlant.bufferFilling = Math.min(
+                    powerPlant.bufferSize,
+                    currentProduction * powerPlant.productionRatioBuffer + powerPlant.bufferFilling
+                );
+
+                powerPlant.currentProduction = currentProduction;
+                powerPlant.oldProduction = oldProduction;
+                powerPlant.status = status;
+                powerPlant.date = date;
+                return powerPlant;
+            }),
+            market: {
+                demand: computeMarketDemand(prosumers)
+            },
+            date: date.getTime()
+        });
+    }).then(storeData);
 };
 
 function computeWindSpeed(date) {
@@ -153,16 +155,24 @@ function computeProsumerConsumption(date, prosumerId) {
             5400,
             currentTimestamp
         ) * afternoonConsumption
-    ) * 500 * 100)/100.0;
+    ) * 500 * 100) / 100.0;
 }
 
 function computeProduction(windSpeed) {
     return Math.floor(5 * Math.log2(windSpeed) * 100) / 100.0;
 }
 
-function computeCurrentElectricityPrice() {
-    // FIXME
-    return 1.5;
+function computeCurrentElectricityPrice(demand, totalProduction) {
+    if (totalProduction === 0) {
+        return 50;
+    }
+    return Math.min(
+        50,
+        Math.max(
+            10,
+            (100.0 * demand) / totalProduction
+        )
+    );
 }
 
 function computeMarketDemand(prosumers) {
@@ -202,7 +212,11 @@ function storeData(data) {
         updatePowerPlant(powerPlant);
     }
 
-    updateMarket(currentMarketElectricity, data.market, data.date);
+    const market = data.market;
+    market.computedPrice = computeCurrentElectricityPrice(market.demand, currentMarketElectricity);
+    market.electricity = currentMarketElectricity || 0;
+    market.date = data.date;
+    updateMarket(market);
 
     return data;
 }
@@ -263,18 +277,18 @@ function updatePowerPlant(powerPlant) {
     }, operation);
 }
 
-function updateMarket(electricity, market, date) {
+function updateMarket(market) {
     database.findLast(DATABASE_NAME, 'market', {}, 'date')
         .then(lastMarket => {
             const actualPrice = lastMarket
                 ? lastMarket.actualPrice
                 : market.computedPrice;
             database.insertOne(DATABASE_NAME, 'market', {
-                electricity: electricity || 0,
+                electricity: market.electricity || 0,
                 computedPrice: market.computedPrice,
                 demand: market.demand || 0,
                 actualPrice,
-                date
+                date: market.date
             })
         });
 }
