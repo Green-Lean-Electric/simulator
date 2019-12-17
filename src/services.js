@@ -234,8 +234,8 @@ function updateProsumer(prosumer, consumption, production, windSpeed, currentMar
         );
         prosumer.electricySentToTheMarket = productionConsumptionDifference * prosumer.productionRatioMarket;
     } else {
-        if (currentMarketElectricity > -productionConsumptionDifference * prosumer.consumptionRatioMarket
-            && prosumer.bufferFilling > -productionConsumptionDifference * prosumer.consumptionRatioBuffer) {
+        if (currentMarketElectricity >= -productionConsumptionDifference * prosumer.consumptionRatioMarket
+            && prosumer.bufferFilling >= -productionConsumptionDifference * prosumer.consumptionRatioBuffer) {
             prosumer.boughtElectricity = -productionConsumptionDifference * prosumer.consumptionRatioMarket;
             prosumer.bufferFilling += productionConsumptionDifference * prosumer.consumptionRatioBuffer;
         } else {
