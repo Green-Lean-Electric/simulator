@@ -204,6 +204,7 @@ function storeData(data) {
         currentMarketElectricity += updateProsumer(prosumer, consumption, production, windSpeed, currentMarketElectricity);
     }
 
+
     const stoppedPowerPlants = data.powerPlants.filter(powerPlant => powerPlant.status !== 2).length;
     for (const powerPlant of data.powerPlants) {
         if (currentMarketElectricity < 0 && powerPlant.status !== 2) {
@@ -211,7 +212,7 @@ function storeData(data) {
         }
         updatePowerPlant(powerPlant);
     }
-
+console.log(currentMarketElectricity);
     const market = data.market;
     market.computedPrice = computeCurrentElectricityPrice(market.demand, currentMarketElectricity);
     market.electricity = currentMarketElectricity || 0;
