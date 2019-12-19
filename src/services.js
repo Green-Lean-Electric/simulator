@@ -212,7 +212,7 @@ function storeData(data) {
         }
         updatePowerPlant(powerPlant);
     }
-console.log(currentMarketElectricity);
+    console.log(currentMarketElectricity);
     const market = data.market;
     market.computedPrice = computeCurrentElectricityPrice(market.demand, currentMarketElectricity);
     market.electricity = currentMarketElectricity || 0;
