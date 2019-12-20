@@ -1,6 +1,6 @@
 {
   "name": "simulator",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "dependencies": {
     "formidable": "^1.2.1",
     "mongodb": "^3.3.4"
