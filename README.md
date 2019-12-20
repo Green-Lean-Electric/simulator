@@ -1,24 +1,14 @@
-# Simulator Project
+# Simulator project
 
-The Simulator project is in charge of all the calculations for the Green Lean Electrics Project (```https://github.com/Green-Lean-Electric```), such as the electricity production, consumption, price or the wind speed. It’s an application which infinitely runs and computes each second the new values for the power plants, the prosumers and the market.
-
-## Online Usage
-
-You can use our project on our server with the following links :
-
-Manager ```http://145.239.75.80:8082/```
-
-Prosumer ```http://145.239.75.80:8081/``` 
+The Simulator project is in charge of all the calculations for the Green Lean Electrics Project (https://github.com/Green-Lean-Electric), such as the electricity production, consumption, price or the wind speed. It’s an application which infinitely runs and computes each second the new values for the power plants, the prosumers and the market.
  
 ## Installation
 
-Download and install Node.js version 12 or higher. Lower versions may not work due to advanced JavaScript features. 
-
+Download and install Node.js version 12 or higher. Lower versions may not work due to advanced JavaScript features.  
 Download and install on localhost MongoDB version 4 or higher. Default port should be 27017.
 
-Clone all projects repositories (Simulator, Prosumer, Manager & Utils)
-
-Inside each project run 
+Clone all projects repositories (Simulator, Prosumer, Manager & Utils).  
+Inside each project run the following command:
 
 ```bash
 npm install
@@ -49,9 +39,6 @@ However, if you only have a Windows computer, you need a few more steps to activ
 
 ## Other Projects Linked to this one
 
-Manager ```https://github.com/Green-Lean-Electric/manager```
-
-Prosumer ```https://github.com/Green-Lean-Electric/prosumer```
-
-Utils ```https://github.com/Green-Lean-Electric/utils```
-
+Manager: https://github.com/Green-Lean-Electric/manager  
+Prosumer: https://github.com/Green-Lean-Electric/prosumer  
+Utils: https://github.com/Green-Lean-Electric/utils  
