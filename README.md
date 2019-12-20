@@ -4,7 +4,7 @@ The Simulator project is in charge of all the calculations for the Green Lean El
 
 ## Online Usage
 
-You can use our project on our serveur with the following links :
+You can use our project on our server with the following links :
 
 Manager ```http://145.239.75.80:8082/```
 
